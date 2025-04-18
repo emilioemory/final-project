@@ -19,3 +19,11 @@ To generate the final report, follow these steps:
 1. Clone this repository to your local machine using Git:
    ```bash
    git clone https://github.com/emilioemory/final-project.git
+   ```
+## Reproducing the Environment
+
+To install all necessary R packages for this project using `renv`:
+
+```bash
+make install
+```
