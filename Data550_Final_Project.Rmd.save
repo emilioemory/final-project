@@ -1,0 +1,92 @@
+---
+title: "Final Project 2"
+author: "Emilio Estrada"
+date: "2025-02-21"
+output: pdf_document
+toc: true
+---
+
+# Introduction
+I am from California and interested in exploring data from the California Health and Human Services(CHHS) Open Data Portal. The URL is [hyperlinked here](https://data.chhs.ca.gov/dataset/hospital-quarterly-financial-utilization-report-complete-data-set/resource/670a04a0-4503-40cc-955a-c1ba829ab460).
+
+This analysis will focus on hospital performance using financial and utilization data.  
+
+## Description of Dataset  
+The 2024 Quarter 3 is the most recently published financial utilization report by CHHS. It contains facility-level data from hospitals and hospital systems, including service capacity, revenues and expenses by payer, and utilization by payer. 
+
+## Objectives  
+This analysis aims to assess hospital performance across California by examining financial and service delivery indicators. I will explore which hospitals or counties are performing well and which are not, using key financial and utilization metrics. Below are the objectives listed by domain:
+
+1. Services Capacity: I will look at licensed beds, available beds, and staffed beds by facility.
+2. Utilization: I will look at traditional Medicare visits by county 
+      Note: A utilization analysis is not depicted in this assignment for either the table or the figure.
+3. Revenue: I will look at net patient revenue for traditional Medicare, managed Medicare, traditional MediCal, and managed MediCal by California counties.
+
+# Load data from a local directory or an online repository
+```{r}
+# Loading necessary library
+library(readxl)
+
+# defining relative file path 
+file_path <- file.path("data", "2024_q3.xlsx")
+
+# reading the excel file for the data set into a dataframe
+df <- read_excel(file_path, sheet = 1)
+
+# displaying a preview of the data set to supervise successful upload
+head(df)
+```
+
+
+# Create some table describing or showing the results of an analysis of the data
+Include text describing the contents of the table: In this table I am display all California hospital facilities' information on licensed bed, available beds, and staffed beds for patients. I then arrange from lowest to highest the number of licensed beds available to patients. Two Kaiser Foundation facilities have the lowest number of licensed beds and Coalinga State Hospital has the highest number with 1500. Of these licensed beds we can also see how many are available and how many are staffed.
+
+```{r}
+# loading necessary libraries
+library(dplyr)
+library(knitr)
+
+# selecting columns for licensed bed, available beds, and staffed beds and sorting by facility name
+bed_summary <- df %>%
+  select(FAC_NAME, LIC_BEDS, AVL_BEDS, STF_BEDS) %>%
+  arrange(LIC_BEDS)  
+
+# displaying the table
+kable(bed_summary, caption = "hospital bed summary by facility")
+```
+
+# Create some figure describing some element of the data#
+Include text describing the figure: In this figure I am looking at gross inpatient revenue for traditional Medicare, managed Medicare, traditional MediCal, and managed MediCal by California counties. The counties are not arranged from lowest to highest, but in alphabetical order. We see that Los Angeles county and Santa Clara county produce the two higest revenues among the four government health insurance plans, respectively. I expected San Diego county or even San Francisco county to rank second in revenue, so this figure is a good example of paying closer attention to finance mechanisms and trends at hospital facilities in Santa Clara county if my goal was to generate more revenue in another county.
+
+```{r}
+# loading necessary libraries
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(scales)  # added for formatting axis labels
+
+# aggregating gross inpatient revenue by county
+county_revenue <- df %>%
+  group_by(COUNTY_NAME) %>%
+  summarise(
+    GRIP_MCAR = sum(GRIP_MCAR, na.rm = TRUE),
+    GRIP_MCAR_MC = sum(GRIP_MCAR_MC, na.rm = TRUE),
+    GRIP_MCAL = sum(GRIP_MCAL, na.rm = TRUE),
+    GRIP_MCAL_MC = sum(GRIP_MCAL_MC, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = -COUNTY_NAME, names_to = "payer", values_to = "revenue")
+
+# creating the bar plot for all counties with scaled axes
+ggplot(county_revenue, aes(x = COUNTY_NAME, y = revenue, fill = payer)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Gross Inpatient Revenue by County",
+    x = "County",
+    y = "Revenue ($)",
+    fill = "Payer"
+  ) +
+  scale_y_continuous(labels = label_comma()) +  # formatting y-axis labels with commas
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), text=element_text(size=5))  # rotating x-axis labels for readability
+```
+
